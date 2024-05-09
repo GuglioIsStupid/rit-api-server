@@ -7,9 +7,8 @@ dotenv.config();
 
 // Modules
 // load modals/UserModal.ts
-import { setupApp, getUser, createUser, updateUser, deleteUser, printTestUser } from './modals/UserModal.js';
+import { setupApp, getUser, createUser, updateUser, deleteUser, printTestUser, getUsers } from './modals/UserModule.js';
 
-// print user modal as a test
 const firebaseConfig = {
     apiKey: process.env.API_KEY,
     authDomain: process.env.AUTH_DOMAIN,
@@ -24,6 +23,7 @@ const firebaseApp = initializeApp(firebaseConfig);
 //const analytics = getAnalytics(app);
 setupApp(firebaseApp);
 
+// This both tests if the database is working, and checks if we can find a user from their SteamID
 printTestUser();
 
 // Setting up the express app
@@ -39,6 +39,50 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+var TEMPLATE_HTML_CODE = `
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rit API Server</title>
+
+    <!--Get bootstraps-->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/dataTables.bootstrap4.min.css">
+    
+    <!--Get jQuery-->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js"></script>
+
+    <!-- meta -->
+    <meta name="og:title" content="Rit API Server | <REPLACE ME TITLE>">
+    <meta name="description" content="<REPLACE ME DESC>">
+    <meta name="keywords" content="Rit, API, Server">
+    <meta name="author" content="Rit">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="Content-Language" content="en">
+</head>
+
+<body>
+    <style>
+        body {
+            margin: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+    </style>
+    <REPLACE ME HTML>
+</body>
+
+</html>
+`
 
 /*
     * This is the main entry point for the API.
@@ -67,8 +111,36 @@ app.get("/", (req, res) => { // No request parameters. Simply return a html file
     * defaults to 1-25.
     ? For example, /api/v1/users?start=1&limit=25
 */
-app.get("/api/v1/users", (req, res) => {
-    res.json({ message: "GET all users" });
+app.get("/api/v1/users", async (req, res) => {
+    var start = req.query.start || 1;
+    var limit = req.query.limit || 25;
+
+    // Get users from start to end
+    var users = await getUsers(start, limit);
+    res.json(
+        { 
+            message: "GET all users", 
+            users: users ,
+            code: users ? 200 : 404
+        }       
+    );
+});
+
+app.get("/api/v1/users/html", async (req, res) => {
+    var start = req.query.start || 1;
+    var limit = req.query.limit || 25;
+
+    // Get users from start to end
+    var users = await getUsers(start, limit);
+    var newHtml = TEMPLATE_HTML_CODE.replace("<REPLACE ME TITLE>", "Users")
+                                    .replace("<REPLACE ME DESC>", "Get all users")
+                                    .replace("<REPLACE ME HTML>", "<table id='usersTable' class='table table-striped table-bordered'><thead><tr><th>Steam ID</th><th>Username</th><th>Profile Picture</th></tr></thead><tbody>");
+    users.forEach(user => {
+        newHtml += `<tr><td>${user.steamId}</td><td>${user.username}</td><td><img src='${user.profilePicture}'></td></tr>`;
+    });
+
+    newHtml += "</tbody></table>";
+    res.send(newHtml); 
 });
 
 /*
@@ -78,8 +150,23 @@ app.get("/api/v1/users", (req, res) => {
     * We can also add a field to specify the size of the picture (small, medium, large).
     ? For example, /api/v1/users/:id/picture?size=medium
 */
-app.get("/api/v1/users/:id", (req, res) => {
-    res.json({ message: `GET user with id ${req.params.id || "{UNKNOWN ID}"}` });
+app.get("/api/v1/users/:id", async (req, res) => {
+    var user = await getUser(req.params.id);
+    res.json(
+        { 
+            message: `GET user with id ${req.params.id || "{UNKNOWN ID}"}`, 
+            //user: user,
+            code: user ? 200 : 404
+        }
+    );
+});
+
+app.get("/api/v1/users/:id/html", async (req, res) => {
+    var user = await getUser(req.params.id);
+    var newHtml = TEMPLATE_HTML_CODE.replace("<REPLACE ME TITLE>", "User")
+                                    .replace("<REPLACE ME DESC>", `Get user with id ${req.params.id || "{UNKNOWN ID}"}`)
+                                    .replace("<REPLACE ME HTML>", `<table id='usersTable' class='table table-striped table-bordered'><thead><tr><th>Steam ID</th><th>Username</th><th>Profile Picture</th></tr></thead><tbody><tr><td>${user.steamId}</td><td>${user.username}</td><td><img src='${user.profilePicture}'></td></tr></tbody></table>`);
+    res.send(newHtml); 
 });
 
 /*
@@ -91,7 +178,10 @@ app.get("/api/v1/users/:id", (req, res) => {
     ? For example, /api/v1/users?action=register
 */
 app.post("/api/v1/users", (req, res) => {
-    res.json({ message: "POST new user" });
+    res.json({
+        message: "POST new user | NOT IMPLEMENTED YET",
+        code: 501
+    });
 });
 
 /*
@@ -102,7 +192,10 @@ app.post("/api/v1/users", (req, res) => {
     ? For example, /api/v1/users/:id?reason=account-closed
 */
 app.delete("/api/v1/users/:id", (req, res) => {
-    res.json({ message: `DELETE user with id ${req.params.id || "{UNKNOWN ID}"}` });
+    res.json({
+        message: `DELETE user with id ${req.params.id || "{UNKNOWN ID}"} | NOT IMPLEMENTED YET`,
+        code: 501
+    });
 });
 
 /*
@@ -112,7 +205,10 @@ app.delete("/api/v1/users/:id", (req, res) => {
     ? For example, /api/v1/users/:id/report?reason=inappropriate-content
 */
 app.post("/api/v1/users/:id/report", (req, res) => {
-    res.json({ message: `REPORT user with id ${req.params.id || "{UNKNOWN ID}"} for reason: ${req.body.reason || "{NO REASON}"}` });
+    res.json({ 
+        message: `REPORT user with id ${req.params.id || "{UNKNOWN ID}"} for reason: ${req.body.reason || "{NO REASON}"}`,
+        code: 200
+    });
 });
 
 /* 
@@ -131,7 +227,10 @@ app.post("/api/v1/users/:id/report", (req, res) => {
     ? For example, /api/v1/beatmaps?page=1&limit=25&difficulty=hard&genre=rock
 */
 app.get("/api/v1/beatmaps", (req, res) => {
-    res.json({ message: "GET all beatmaps" });
+    res.json({ 
+        message: "GET all beatmaps | NOT IMPLEMENTED YET",
+        code: 501
+    });
 });
 
 /*
@@ -142,7 +241,10 @@ app.get("/api/v1/beatmaps", (req, res) => {
     ! This is just an example. Preview files may or may not be added to the database.
 */
 app.get("/api/v1/beatmaps/:id", (req, res) => {
-    res.json({ message: `GET beatmap with id ${req.params.id || "{UNKNOWN ID}"}` });
+    res.json({
+        message: `GET beatmap with id ${req.params.id || "{UNKNOWN ID}"} | NOT IMPLEMENTED YET`,
+        code: 501
+    });
 });
 
 /*
@@ -155,7 +257,10 @@ app.get("/api/v1/beatmaps/:id", (req, res) => {
     ? For example, /api/v1/beatmaps?action=upload
 */
 app.post("/api/v1/beatmaps", (req, res) => {
-    res.json({ message: "POST new beatmap" });
+    res.json({
+        message: "POST new beatmap | NOT IMPLEMENTED YET",
+        code: 501
+    });
 });
 
 /*
@@ -166,7 +271,10 @@ app.post("/api/v1/beatmaps", (req, res) => {
     ? For example, /api/v1/beatmaps/:id?reason=incorrect-info
 */
 app.delete("/api/v1/beatmaps/:id", (req, res) => {
-    res.json({ message: `DELETE beatmap with id ${req.params.id || "{UNKNOWN ID}"}` });
+    res.json({
+        message: `DELETE beatmap with id ${req.params.id || "{UNKNOWN ID}"} | NOT IMPLEMENTED YET`,
+        code: 501
+    });
 });
 
 /*
@@ -176,7 +284,10 @@ app.delete("/api/v1/beatmaps/:id", (req, res) => {
     ? For example, /api/v1/beatmaps/:id/report?reason=inappropriate-content
 */
 app.post("/api/v1/beatmaps/:id/report", (req, res) => {
-    res.json({ message: `REPORT beatmap with id ${req.params.id || "{UNKNOWN ID}"} for reason: ${req.body.reason || "{NO REASON}"}` });
+    res.json({
+        message: `REPORT beatmap with id ${req.params.id || "{UNKNOWN ID}"} for reason: ${req.body.reason || "{NO REASON}"} | NOT IMPLEMENTED YET`,
+        code: 501
+    });
 });
 
 /* 
@@ -194,7 +305,10 @@ app.post("/api/v1/beatmaps/:id/report", (req, res) => {
     ? For example, /api/v1/beatmaps/:id/scores?start=1&limit=25
 */
 app.get("/api/v1/beatmaps/:id/scores", (req, res) => {
-    res.json({ message: `GET all scores for beatmap with id ${req.params.id || "{UNKNOWN ID}"}` });
+    res.json({
+        message: `GET all scores for beatmap with id ${req.params.id || "{UNKNOWN ID}"} | NOT IMPLEMENTED YET`,
+        code: 501
+    })
 });
 
 /*
@@ -204,7 +318,10 @@ app.get("/api/v1/beatmaps/:id/scores", (req, res) => {
     ? For example, /api/v1/scores/:id?action=get
 */
 app.get("/api/v1/scores/:id", (req, res) => {
-    res.json({ message: `GET score with id ${req.params.id || "{UNKNOWN ID}"}` });
+    res.json({
+        message: `GET score with id ${req.params.id || "{UNKNOWN ID}"} | NOT IMPLEMENTED YET`,
+        code: 501
+    })
 });
 
 /*
@@ -216,7 +333,10 @@ app.get("/api/v1/scores/:id", (req, res) => {
     ? For example, /api/v1/beatmaps/:id/scores?action=submit
 */
 app.post("/api/v1/beatmaps/:id/scores", (req, res) => {
-    res.json({ message: `POST new score for beatmap with id ${req.params.id || "{UNKNOWN ID}"}` });
+    res.json({
+        message: `POST new score for beatmap with id ${req.params.id || "{UNKNOWN ID}"} | NOT IMPLEMENTED YET`,
+        code: 501
+    })
 });
 
 /*
@@ -228,7 +348,10 @@ app.post("/api/v1/beatmaps/:id/scores", (req, res) => {
     ? For example, /api/v1/scores/:id?reason=incorrect-info
 */
 app.delete("/api/v1/scores/:id", (req, res) => {
-    res.json({ message: `DELETE score with id ${req.params.id || "{UNKNOWN ID}"}` });
+    res.json({
+        message: `DELETE score with id ${req.params.id || "{UNKNOWN ID}"} | NOT IMPLEMENTED YET`,
+        code: 501
+    });
 });
 
 /*
@@ -238,5 +361,8 @@ app.delete("/api/v1/scores/:id", (req, res) => {
     ? For example, /api/v1/scores/:id/report?reason=falsified-score
 */
 app.post("/api/v1/scores/:id/report", (req, res) => {
-    res.json({ message: `REPORT score with id ${req.params.id || "{UNKNOWN ID}"} for reason: ${req.body.reason || "{NO REASON}"}` });
+    res.json({
+        message: `REPORT score with id ${req.params.id || "{UNKNOWN ID}"} for reason: ${req.body.reason || "{NO REASON}"} | NOT IMPLEMENTED YET`,
+        code: 501
+    });
 });
