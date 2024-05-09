@@ -118,6 +118,8 @@ app.get("/api/v1/users", async (req, res) => {
 
     // Get users from start to end
     var users = await getUsers(start, limit);
+    users = users.map(user => user.data());
+    console.log(users);
     res.json(
         { 
             message: "GET all users", 
@@ -137,6 +139,7 @@ app.get("/api/v1/users/html", async (req, res) => {
                                     .replace("<REPLACE ME DESC>", "Get all users")
                                     .replace("<REPLACE ME HTML>", "<table id='usersTable' class='table table-striped table-bordered'><thead><tr><th>Steam ID</th><th>Username</th><th>Profile Picture</th></tr></thead><tbody>");
     users.forEach(user => {
+        user = user.data();
         newHtml += `<tr><td>${user.steamId}</td><td>${user.username}</td><td><img src='${user.profilePicture}'></td></tr>`;
     });
 

@@ -177,22 +177,21 @@ async function getUser(steamID) {
 */
 async function getUsers(start, end) {
     // get only amount of users between start and end
-    const q = query(collection(db, "users"), where("uniqueId", ">=", start), where("uniqueId", "<=", end));
+    // first, get ALL users
+    const q = query(collection(db, "users"));
     const querySnapshot = await getDocs(q);
 
+    var users = [];
     var index = 0;
-    var newQuerySnapshot = [];
-    querySnapshot.forEach(async (doc) => {
-        if (index >= start && index <= end) {
-            newQuerySnapshot.push(doc);
+    querySnapshot.forEach((doc) => {
+        console.log(doc.id, " => ", doc.data());
+        if (index >= start-1 && index < end-1) {
+            users.push(doc);
         }
         index++;
-        if (index > end) {
-            return;
-        }
     });
 
-    return newQuerySnapshot;
+    return users;
 }
 
 export { setupApp, createUser, updateUser, deleteUser, getUser, CreateUserModal, createTestUser, printTestUser, getUsers }
