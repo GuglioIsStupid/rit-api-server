@@ -154,6 +154,17 @@ async function getUser(steamID) {
         user = doc;
     });
 
+    if (user == null) {
+        console.log("User not found: " + steamID);
+        user = {
+            data: function () {
+                return {
+                    code: 404,
+                }
+            }
+        }
+    }
+
     return user;
 }
 

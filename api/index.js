@@ -155,7 +155,7 @@ app.get("/api/v1/users/:id", async (req, res) => {
     res.json(
         { 
             message: `GET user with id ${req.params.id || "{UNKNOWN ID}"}`, 
-            //user: user,
+            user: user.data(),
             code: user ? 200 : 404
         }
     );
@@ -163,9 +163,10 @@ app.get("/api/v1/users/:id", async (req, res) => {
 
 app.get("/api/v1/users/:id/html", async (req, res) => {
     var user = await getUser(req.params.id);
+    user = user.data();
     var newHtml = TEMPLATE_HTML_CODE.replace("<REPLACE ME TITLE>", "User")
                                     .replace("<REPLACE ME DESC>", `Get user with id ${req.params.id || "{UNKNOWN ID}"}`)
-                                    .replace("<REPLACE ME HTML>", `<table id='usersTable' class='table table-striped table-bordered'><thead><tr><th>Steam ID</th><th>Username</th><th>Profile Picture</th></tr></thead><tbody><tr><td>${user.steamId}</td><td>${user.username}</td><td><img src='${user.profilePicture}'></td></tr></tbody></table>`);
+                                    .replace("<REPLACE ME HTML>", `<table id='usersTable' class='table table-striped table-bordered'><thead><tr><th>Steam ID</th><th>Username</th><th>Profile Picture</th></tr></thead><tbody><tr><td>${user.steamId}</td><td>${user.userName}</td><td><img src='${user.profilePicture}'></td></tr></tbody></table>`);
     res.send(newHtml); 
 });
 
