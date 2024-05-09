@@ -2,7 +2,7 @@
   "name": "rit-api-server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.ts",
+  "main": "api/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node api/index.ts"
@@ -10,9 +10,12 @@
   "author": "GuglioIsStupid",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.19.2"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "firebase": "^10.11.1"
   },
   "devDependencies": {
     "@types/node": "^20.12.11"
-  }
+  },
+  "type": "module"
 }

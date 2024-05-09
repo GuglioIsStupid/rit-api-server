@@ -1,5 +1,30 @@
 // Libraries
-const express = require("express");
+import express from 'express';
+import { initializeApp } from "firebase/app";
+//import { getAnalytics } from "firebase/analytics";
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Modules
+// load modals/UserModal.ts
+import { setupApp, getUser, createUser, updateUser, deleteUser, printTestUser } from './modals/UserModal.js';
+
+// print user modal as a test
+const firebaseConfig = {
+    apiKey: process.env.API_KEY,
+    authDomain: process.env.AUTH_DOMAIN,
+    projectId: process.env.PROJECT_ID,
+    storageBucket: process.env.STORAGE_BUCKET,
+    messagingSenderId: process.env.MESSAGING_SENDER_ID,
+    appId: process.env.APP_ID,
+    measurementId: process.env.MEASUREMENT_ID
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+//const analytics = getAnalytics(app);
+setupApp(firebaseApp);
+
+printTestUser();
 
 // Setting up the express app
 const app = express(); 
