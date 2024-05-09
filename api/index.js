@@ -62,7 +62,7 @@ var TEMPLATE_HTML_CODE = `
 
     <!-- meta -->
     <meta name="og:title" content="Rit API Server | <REPLACE ME TITLE>">
-    <meta name="description" content="<REPLACE ME DESC>">
+    <meta name="og:description" content="<REPLACE ME DESC>">
     <meta name="keywords" content="Rit, API, Server">
     <meta name="author" content="Rit">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
