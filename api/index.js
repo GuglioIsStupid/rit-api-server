@@ -7,6 +7,7 @@ dotenv.config();
 
 // Modules
 // load modals/UserModal.ts
+// Force rebuild
 import { setupApp, getUser, createUser, updateUser, deleteUser, printTestUser, getUsers } from './modals/UserModule.js';
 
 const firebaseConfig = {
