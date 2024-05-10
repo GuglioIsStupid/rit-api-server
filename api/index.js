@@ -25,7 +25,7 @@ const firebaseApp = initializeApp(firebaseConfig);
 setupApp(firebaseApp);
 
 // This both tests if the database is working, and checks if we can find a user from their SteamID
-printTestUser();
+//printTestUser();
 
 // Setting up the express app
 const app = express(); 
@@ -129,6 +129,11 @@ app.get("/api/v1/users", async (req, res) => {
     );
 });
 
+/*
+    * HTML Variant of the above endpoint.
+    * Just returns a simple html table with all the users.
+    * Used by non-developers to view the data in a more readable format.
+*/
 app.get("/api/v1/users/html", async (req, res) => {
     var start = req.query.start || 1;
     var limit = req.query.limit || 25;
@@ -165,6 +170,11 @@ app.get("/api/v1/users/:id", async (req, res) => {
     );
 });
 
+/*
+    * HTML Variant of the above endpoint.
+    * Just returns a simple html table with the user.
+    * Used by non-developers to view the data in a more readable format.
+*/
 app.get("/api/v1/users/:id/html", async (req, res) => {
     var user = await getUser(req.params.id);
     user = user.data();
