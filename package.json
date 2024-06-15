@@ -2,17 +2,20 @@
   "name": "rit-api-server",
   "version": "1.0.0",
   "description": "",
-  "main": "api/index.ts",
+  "main": "api/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node api/index.ts"
+    "start": "node api/index.js"
   },
   "author": "GuglioIsStupid",
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "firebase": "^10.11.1"
+    "firebase": "^10.11.1",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.10.1",
+    "mysql2-async": "^2.0.1"
   },
   "devDependencies": {
     "@types/node": "^20.12.11"

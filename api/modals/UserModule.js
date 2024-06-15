@@ -1,19 +1,4 @@
 // User Modal, firestore
-import { initializeApp } from "firebase/app";
-//import { getAnalytics } from "firebase/analytics";
-import {
-    getFirestore,
-    query,
-    collection,
-    getDocs,
-    addDoc,
-    where,
-    updateDoc,
-} from "firebase/firestore";
-import { doc } from "firebase/firestore";
-
-var app = null;
-var db = null;
 
 /**
     * * This function sets up the firebase app and firestore database.
@@ -22,10 +7,28 @@ var db = null;
     * @param {Object} firebaseApp - The firebase app.
     * @returns {boolean} - If the app was set up.
 */
-function setupApp(firebaseApp) {
-    app = firebaseApp;
 
-    db = getFirestore(app);
+import mysql from 'mysql2';
+var con = null;
+
+function setupApp(db) {
+    con = db;
+    // go intop the users database
+    con.query(
+        "USE users",
+        function(err, result) {
+            if (err) throw err;
+
+            // create the users table if it doesn't exist
+            /* con.query(
+                "CREATE TABLE IF NOT EXISTS users (steamId VARCHAR(255), userName VARCHAR(255), scores TEXT, uploadedBeatmaps TEXT, profilePicUrl VARCHAR(255), bannerPicUrl VARCHAR(255), bio TEXT, country VARCHAR(255), uniqueId VARCHAR(255), lastLogin VARCHAR(255), supporter BOOLEAN)",
+                function(err, result) {
+                    if (err) throw err;
+                    console.log("Users table created");
+                }
+            ); */
+        }
+    );
 
     return true;
 }
@@ -35,18 +38,29 @@ function setupApp(firebaseApp) {
     * * The user modal is used to store user data, such as steamID, userName, scores, uploadedBeatmaps, profilePicUrl, bannerPicUrl, bio, country, uniqueId, lastLogin and supporter.
     * @returns {Object} - The user modal.
 */
-function CreateUserModal() {
-    user = {
-        steamId: "",
-        userName: "",
-        scores: {},
-        uploadedBeatmaps: {},
-        profilePicUrl: "",
-        bannerPicUrl: "",
-        bio: "",
-        country: "",
-        uniqueId: "0", // automatically generated, given at the create user request (stored locally)
-        lastLogin: Date.now(),
+function CreateUserModal(
+    steamId = "",
+    userName = "",
+    scores = {},
+    uploadedBeatmaps = {},
+    profilePicUrl = "",
+    bannerPicUrl = "",
+    bio = "",
+    country = "",
+    uniqueId = "0",
+    lastLogin = Date.now()
+) {
+    var user = {
+        steamId: steamId,
+        userName: userName,
+        scores: scores,
+        uploadedBeatmaps: uploadedBeatmaps,
+        profilePicUrl: profilePicUrl,
+        bannerPicUrl: bannerPicUrl,
+        bio: bio,
+        country: country,
+        uniqueId: uniqueId,
+        lastLogin: lastLogin,
 
         // Optional
         supporter: false,
@@ -71,26 +85,141 @@ function createTestUser() {
         bannerPicUrl: "",
         bio: "",
         country: "",
-        uniqueId: "" + Math.floor(Math.random() * 1000000000), // automatically generated, given at the create user request (stored locally)
+        uniqueId: "" + 1, // automatically generated, given at the create user request (stored locally)
         lastLogin: Date.now(),
 
         // Optional
         supporter: false,
     }
 
-    // add test user to database if not exists
-    getUser(test.uniqueId).then((doc) => {
-        if (doc == null) {
-            // add to users database
-            createUser(test);
-        } else {
-            console.log("User already exists in database: " + test.uniqueId);
+    // add to database if not already there (mysql) (WE ARE ALREADY IN THE USERS DATABASE)
+    /* con.query(
+        "SELECT * FROM users WHERE steamId = '" + test.steamId + "'",
+        function(err, result) {
+            if (err) throw err;
+            if (result.length == 0) {
+                con.query(
+                    // MYSQL2 DOESN'T SUPPORT BOOLEAN VALUES, SO WE USE 0 AND 1
+                    "INSERT INTO users (steamId, userName, scores, uploadedBeatmaps, profilePicUrl, bannerPicUrl, bio, country, uniqueId, lastLogin, supporter) VALUES ('" 
+                    + test.steamId + "', '" + test.userName + "', '" + JSON.stringify(test.scores) + "', '" + JSON.stringify(test.uploadedBeatmaps) + "', '" 
+                    + test.profilePicUrl + "', '" + test.bannerPicUrl + "', '" + test.bio + "', '" + test.country + "', '" + test.uniqueId + "', '" + 
+                    test.lastLogin + "', " + (test.supporter ? 1 : 0) + ")",
+
+                    function(err, result) {
+                        if (err) throw err;
+                    }
+                );
+            }
         }
-    });
+    ) */
 
     return test;
 }
 
+/**
+ * Checks for a users existence in the database
+ * @param {string} steamId
+ * @returns {boolean}
+*/
+function checkUserExists(steamId) {
+    var exists = false;
+
+    con.query(
+        "SELECT * FROM users WHERE steamId = '" + steamId + "'",
+        function(err, result) {
+            if (err) throw err;
+            if (result.length > 0) {
+                exists = true;
+            }
+        }
+    );
+
+    return exists;
+}
+
+/**
+    * This creates a user and adds it to the firestore database.
+    * The user is created with a steamID, userName, scores, uploadedBeatmaps, profilePicUrl, bannerPicUrl, bio, country, uniqueId, lastLogin and supporter.
+    * @param {Object} user - The user to create.
+*/
+function createUser(user) {
+    console.log("Creating user: " + user);
+
+    con.query(
+        "SELECT * FROM users WHERE steamId = '" + user.steamId + "'",
+        function(err, result) {
+            if (err) throw err;
+            if (result.length == 0) {
+                con.query(
+                    // MYSQL2 DOESN'T SUPPORT BOOLEAN VALUES, SO WE USE 0 AND 1
+                    "INSERT INTO users (steamId, userName, scores, uploadedBeatmaps, profilePicUrl, bannerPicUrl, bio, country, uniqueId, lastLogin, supporter) VALUES ('" 
+                    + user.steamId + "', '" + user.userName + "', '" + JSON.stringify(user.scores) + "', '" + JSON.stringify(user.uploadedBeatmaps) + "', '" 
+                    + user.profilePicUrl + "', '" + user.bannerPicUrl + "', '" + user.bio + "', '" + user.country + "', '" + user.uniqueId + "', '" + 
+                    user.lastLogin + "', " + (user.supporter ? 1 : 0) + ")",
+
+                    function(err, result) {
+                        if (err) throw err;
+                    }
+                );
+            }
+        }
+    )
+}
+
+/**
+    * * This updates a user in the firestore database.
+    * * The user is updated with a steamID, userName, scores, uploadedBeatmaps, profilePicUrl, bannerPicUrl, bio, country, uniqueId, lastLogin and supporter.
+    * * The user is found by the uniqueId.
+    * @param {Object} user - The user to update.
+    * @returns {null} - Returns nothing. Only updates the user in the database.
+*/
+function updateUser(user) {
+    console.log("Updating user: " + user);
+
+    con.query(
+        "SELECT * FROM users WHERE uniqueId = '" + user.uniqueId + "'",
+        function(err, result) {
+            if (err) throw err;
+            if (result.length > 0) {
+                con.query(
+                    "UPDATE users SET steamId = '" + user.steamId + "', userName = '" + user.userName + "', scores = '" + JSON.stringify(user.scores) + "', uploadedBeatmaps = '" + JSON.stringify(user.uploadedBeatmaps) + "', profilePicUrl = '" + user.profilePicUrl + "', bannerPicUrl = '" + user.bannerPicUrl + "', bio = '" + user.bio + "', country = '" + user.country + "', lastLogin = '" + user.lastLogin + "', supporter = " + (user.supporter ? 1 : 0) + " WHERE uniqueId = '" + user.uniqueId + "'",
+                    function(err, result) {
+                        if (err) throw err;
+                    }
+                );
+            }
+        }
+    );
+}
+
+/**
+    ** This deletes a user from the firestore database.
+    * @param {Object} user - The user to delete.
+    * @returns {boolean} - If the user was deleted.
+*/
+function deleteUser(user) {
+    console.log("Deleting user: " + user);
+
+    var deleted = false;
+
+    con.query(
+        "SELECT * FROM users WHERE uniqueId = '" + user.uniqueId + "'",
+        function(err, result) {
+            if (err) throw err;
+            if (result.length > 0) {
+                con.query(
+                    "DELETE FROM users WHERE uniqueId = '" + user.uniqueId + "'",
+                    function(err, result) {
+                        if (err) throw err;
+                        deleted = true;
+                    }
+                );
+            }
+        }
+    );
+
+    return deleted;
+}
 
 /**
     * * This function prints the test user to the console, it is used to test the user modal and the firestore database.
@@ -101,43 +230,16 @@ function createTestUser() {
 */
 function printTestUser() {
     // find test user from steamID in database
-    getUser("test_STEAMID").then((doc) => {
-        if (doc != null) {
-            console.log("Test user found: " + doc.data().userName);
-        } else {
-            console.log("Test user not found");
+    
+    con.query(
+        "SELECT * FROM users WHERE steamId = 'test_STEAMID'",
+        function(err, result) {
+            if (err) throw err;
+            if (result.length > 0) {
+                console.log("Test user found: " + result[0].userName);
+            }
         }
-    });
-}
-
-/**
-    * This creates a user and adds it to the firestore database.
-    * The user is created with a steamID, userName, scores, uploadedBeatmaps, profilePicUrl, bannerPicUrl, bio, country, uniqueId, lastLogin and supporter.
-    * @param {Object} user - The user to create.
-*/
-async function createUser(user) {
-    await addDoc(collection(db, "users"), user);
-}
-
-/**
-    * * This updates a user in the firestore database.
-    * * The user is updated with a steamID, userName, scores, uploadedBeatmaps, profilePicUrl, bannerPicUrl, bio, country, uniqueId, lastLogin and supporter.
-    * * The user is found by the uniqueId.
-    * @param {Object} user - The user to update.
-*/
-async function updateUser(user) {
-    const userRef = doc(db, "users", user.uniqueId);
-    await updateDoc(userRef, user);
-}
-
-/**
-    ** This deletes a user from the firestore database.
-    * @param {Object} user - The user to delete.
-    * @returns {boolean} - If the user was deleted.
-*/
-async function deleteUser(user) {
-    const userRef = doc(db, "users", user.uniqueId);
-    await deleteDoc(userRef);
+    );
 }
 
 /**
@@ -147,22 +249,27 @@ async function deleteUser(user) {
     * @returns {Object} - The user.
 */
 async function getUser(steamID) {
-    const q = query(collection(db, "users"), where("steamId", "==", steamID));
-    const querySnapshot = await getDocs(q);
+    // like printTestUser but returns the user instead of printing it
     var user = null;
-    querySnapshot.forEach((doc) => {
-        user = doc;
-    });
 
-    if (user == null) {
-        console.log("User not found: " + steamID);
-        user = {
-            data: function () {
-                return {
-                    code: 404,
-                }
-            }
-        }
+    const [rows, fields] = await con.promise().query(
+        "SELECT * FROM users WHERE steamId = '" + steamID + "'"
+    );
+
+    if (rows.length > 0) {
+        user = CreateUserModal(
+            rows[0].steamId,
+            rows[0].userName,
+            JSON.parse(rows[0].scores),
+            JSON.parse(rows[0].uploadedBeatmaps),
+            rows[0].profilePicUrl,
+            rows[0].bannerPicUrl,
+            rows[0].bio,
+            rows[0].country,
+            rows[0].uniqueId,
+            rows[0].lastLogin,
+            rows[0].supporter
+        );
     }
 
     return user;
@@ -175,23 +282,12 @@ async function getUser(steamID) {
     * @param {int} end - The end index of the list.
     * @returns {Array} - The list of users.
 */
-async function getUsers(start, end) {
-    // get only amount of users between start and end
-    // first, get ALL users
-    const q = query(collection(db, "users"));
-    const querySnapshot = await getDocs(q);
-
+function getUsers(start, end) {
+    
     var users = [];
     var index = 0;
-    querySnapshot.forEach((doc) => {
-        console.log(doc.id, " => ", doc.data());
-        if (index >= start-1 && index < end-1) {
-            users.push(doc);
-        }
-        index++;
-    });
-
+    
     return users;
 }
 
-export { setupApp, createUser, updateUser, deleteUser, getUser, CreateUserModal, createTestUser, printTestUser, getUsers }
+export { setupApp, checkUserExists, createUser, updateUser, deleteUser, getUser, CreateUserModal, createTestUser, printTestUser, getUsers }

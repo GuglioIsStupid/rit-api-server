@@ -8,9 +8,9 @@ dotenv.config();
 // Modules
 // load modals/UserModal.ts
 // Force rebuild
-import { setupApp, getUser, createUser, updateUser, deleteUser, printTestUser, getUsers } from './modals/UserModule.js';
+import { setupApp, getUser, createUser, updateUser, deleteUser, printTestUser, getUsers, createTestUser } from './modals/UserModule.js';
 
-const firebaseConfig = {
+/* const firebaseConfig = {
     apiKey: process.env.API_KEY,
     authDomain: process.env.AUTH_DOMAIN,
     projectId: process.env.PROJECT_ID,
@@ -22,17 +22,49 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 //const analytics = getAnalytics(app);
-setupApp(firebaseApp);
+setupApp(firebaseApp); */
+/* 
+var mysql = require('mysql'); */ // use import instead of require
+import mysql from 'mysql2';
+
+var certDataFile = process.env.DB_CERT; // file path to the certificate
+import fs from 'fs';
+// read certificate file
+var certData = fs.readFileSync(certDataFile);
+var con = mysql.createConnection({
+    // has uri, databasename, host, port, user, password, and REQUIRED ssl
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    port: process.env.DB_PORT,
+    ssl: {
+        ca: certData
+    },
+});
+
+// print connection status
+con.connect(function(err) {
+    if (err) throw err;
+    console.log(`Connected to database ${process.env.DB_NAME}`);
+    con.query("SET SQL_REQUIRE_PRIMARY_KEY=OFF") // disable primary key requirement
+
+    // create users database if it doesn't exist
+    /* con.query("CREATE DATABASE IF NOT EXISTS users", function (err, result) {
+        if (err) throw err;
+    }); */
+});
+
+setupApp(con);
 
 // This both tests if the database is working, and checks if we can find a user from their SteamID
-//printTestUser();
+/* printTestUser(); */
 
 // Setting up the express app
 const app = express(); 
 app.use(express.json()); // Parse incoming JSON data
 
 // Port to run the server on. Default is 3000.
-const PORT = process.env.PORT || 3000; 
+const PORT = process.env.PORT || 3000;
 
 /*
     * Start up the server and listen on the specified port.
@@ -91,9 +123,11 @@ var TEMPLATE_HTML_CODE = `
     * We will also add some basic functionality to test the API.
 */
 
+const __dirname = process.cwd() + "/";
+
 app.get("/", (req, res) => { // No request parameters. Simply return a html file.
     // return public/index.html
-    res.sendFile(__dirname + "/public/index.html");
+    res.sendFile(__dirname + "public/index.html");
 });
 
 /* API Endpoints */
@@ -160,11 +194,14 @@ app.get("/api/v1/users/html", async (req, res) => {
     ? For example, /api/v1/users/:id/picture?size=medium
 */
 app.get("/api/v1/users/:id", async (req, res) => {
+    /* var user = getUser(req.params.id); */
+    // wait until the user is retrieved
     var user = await getUser(req.params.id);
+    // 
     res.json(
         { 
             message: `GET user with id ${req.params.id || "{UNKNOWN ID}"}`, 
-            user: user.data(),
+            user: user,
             code: user ? 200 : 404
         }
     );
@@ -192,11 +229,27 @@ app.get("/api/v1/users/:id/html", async (req, res) => {
     * We can also add a field to specify the action (register, update).
     ? For example, /api/v1/users?action=register
 */
-app.post("/api/v1/users", (req, res) => {
+app.post("/api/v1/users", async (req, res) => {
+    // is the API_KEY parameter the same as process.env.RIT_API_KEY?
+    console.log("Yeah.")
+    if (req.query.API_KEY != process.env.RIT_API_KEY) {
+        res.json({
+            message: "Invalid API Key",
+            code: 401
+        });
+        return;
+    }
+
+    var user = await createUser(req.body);
     res.json({
+        message: "POST new user",
+        user: user.data(),
+        code: user ? 200 : 404
+    });
+    /* res.json({
         message: "POST new user | NOT IMPLEMENTED YET",
         code: 501
-    });
+    }); */
 });
 
 /*
