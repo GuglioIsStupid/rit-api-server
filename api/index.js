@@ -152,8 +152,6 @@ app.get("/api/v1/users", async (req, res) => {
 
     // Get users from start to end
     var users = await getUsers(start, limit);
-    users = users.map(user => user.data());
-    console.log(users);
     res.json(
         { 
             message: "GET all users", 
@@ -161,6 +159,15 @@ app.get("/api/v1/users", async (req, res) => {
             code: users ? 200 : 404
         }       
     );
+});
+
+/**
+    * Just the favicon.ico file.
+    * Used by browsers to display the favicon.
+    * We can use the default favicon or add our own.
+*/
+app.get("/favicon.ico", (req, res) => {
+    res.sendFile(__dirname + "public/favicon.ico");
 });
 
 /*
@@ -178,8 +185,9 @@ app.get("/api/v1/users/html", async (req, res) => {
                                     .replace("<REPLACE ME DESC>", "Get all users")
                                     .replace("<REPLACE ME HTML>", "<table id='usersTable' class='table table-striped table-bordered'><thead><tr><th>Steam ID</th><th>Username</th><th>Profile Picture</th></tr></thead><tbody>");
     users.forEach(user => {
-        user = user.data();
-        newHtml += `<tr><td>${user.steamId}</td><td>${user.username}</td><td><img src='${user.profilePicture}'></td></tr>`;
+        /* newHtml += `<tr><td>${user.steamId}</td><td>${user.userName}</td><td><img src='${user.profilePicture}'></td></tr>`; */
+        // display all the info
+        newHtml += `<tr><td>${user.steamId}</td><td>${user.userName}</td><td><img src='${user.profilePicture}'></td></tr>`;
     });
 
     newHtml += "</tbody></table>";

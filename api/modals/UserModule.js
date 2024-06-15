@@ -280,12 +280,41 @@ async function getUser(steamID) {
     * * The list is between the start and end index.
     * @param {int} start - The start index of the list.
     * @param {int} end - The end index of the list.
-    * @returns {Array} - The list of users.
+    * @returns {Array} users - The list of users.
 */
-function getUsers(start, end) {
+async function getUsers(start, end) {
     
     var users = [];
-    var index = 0;
+
+    const [rows, fields] = await con.promise().query(
+        "SELECT * FROM users"
+    );
+
+    // if end is greater than the amount of users, set it to the amount of users
+    end = end > rows.length ? rows.length : end;
+
+    console.log("Rows length: " + rows.length, "Start: " + start, "End: " + end);
+    for (var i = start-1; i < end; i++) {
+        var user = CreateUserModal(
+            rows[i].steamId,
+            rows[i].userName,
+            JSON.parse(rows[i].scores),
+            JSON.parse(rows[i].uploadedBeatmaps),
+            rows[i].profilePicUrl,
+            rows[i].bannerPicUrl,
+            rows[i].bio,
+            rows[i].country,
+            rows[i].uniqueId,
+            rows[i].lastLogin,
+            rows[i].supporter
+        );
+
+        users.push(user);
+
+        console.log("User: " + user.userName);
+    }
+
+    console.log("Users: " + users);
     
     return users;
 }
