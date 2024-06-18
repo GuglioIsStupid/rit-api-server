@@ -32,7 +32,6 @@ import fs from 'fs';
 // read certificate file
 var certData = fs.readFileSync(certDataFile);
 var con = mysql.createConnection({
-    // has uri, databasename, host, port, user, password, and REQUIRED ssl
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
@@ -128,6 +127,13 @@ const __dirname = process.cwd() + "/";
 app.get("/", (req, res) => { // No request parameters. Simply return a html file.
     // return public/index.html
     res.sendFile(__dirname + "public/index.html");
+});
+
+app.get("/api/v1/test_connection", (req, res) => {
+    res.json({ 
+        message: "GET test_connection", 
+        code: 200
+    });
 });
 
 /* API Endpoints */

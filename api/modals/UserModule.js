@@ -48,6 +48,7 @@ function CreateUserModal(
     bio = "",
     country = "",
     uniqueId = "0",
+    rating = 0,
     lastLogin = Date.now()
 ) {
     var user = {
@@ -60,6 +61,7 @@ function CreateUserModal(
         bio: bio,
         country: country,
         uniqueId: uniqueId,
+        rating: rating,
         lastLogin: lastLogin,
 
         // Optional
@@ -182,7 +184,10 @@ function updateUser(user) {
             if (err) throw err;
             if (result.length > 0) {
                 con.query(
-                    "UPDATE users SET steamId = '" + user.steamId + "', userName = '" + user.userName + "', scores = '" + JSON.stringify(user.scores) + "', uploadedBeatmaps = '" + JSON.stringify(user.uploadedBeatmaps) + "', profilePicUrl = '" + user.profilePicUrl + "', bannerPicUrl = '" + user.bannerPicUrl + "', bio = '" + user.bio + "', country = '" + user.country + "', lastLogin = '" + user.lastLogin + "', supporter = " + (user.supporter ? 1 : 0) + " WHERE uniqueId = '" + user.uniqueId + "'",
+                    "UPDATE users SET steamId = '" + user.steamId + "', userName = '" + user.userName + "', scores = '" + JSON.stringify(user.scores) + "', uploadedBeatmaps = '" + 
+                    JSON.stringify(user.uploadedBeatmaps) + "', profilePicUrl = '" + user.profilePicUrl + "', bannerPicUrl = '" + user.bannerPicUrl + "', bio = '" + user.bio + 
+                    "', country = '" + user.country + "', rating = '" + user.rating + '", lastLogin = ' + user.lastLogin + "', supporter = " + (user.supporter ? 1 : 0) + 
+                    " WHERE uniqueId = '" + user.uniqueId + "'",
                     function(err, result) {
                         if (err) throw err;
                     }
@@ -267,6 +272,7 @@ async function getUser(steamID) {
             rows[0].bio,
             rows[0].country,
             rows[0].uniqueId,
+            rows[0].rating || 0,
             rows[0].lastLogin,
             rows[0].supporter
         );
@@ -305,6 +311,7 @@ async function getUsers(start, end) {
             rows[i].bio,
             rows[i].country,
             rows[i].uniqueId,
+            rows[i].rating || 0,
             rows[i].lastLogin,
             rows[i].supporter
         );
